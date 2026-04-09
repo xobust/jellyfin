@@ -164,6 +164,10 @@ public class BaseItemEntity
 
     public Guid? SeriesId { get; set; }
 
+    public bool HasOrderedChapters { get; set; }
+
+    public string? SegmentUuid { get; set; }
+
     public ICollection<PeopleBaseItemMap>? Peoples { get; set; }
 
     public ICollection<UserData>? UserData { get; set; }

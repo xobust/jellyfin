@@ -216,6 +216,9 @@ namespace Jellyfin.Server.Implementations.Migrations
                     b.Property<string>("Genres")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasOrderedChapters")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("Height")
                         .HasColumnType("INTEGER");
 
@@ -313,6 +316,9 @@ namespace Jellyfin.Server.Implementations.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SeasonName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SegmentUuid")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("SeriesId")
@@ -427,6 +433,7 @@ namespace Jellyfin.Server.Implementations.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0000-000000000001"),
+                            HasOrderedChapters = false,
                             IsFolder = false,
                             IsInMixedFolder = false,
                             IsLocked = false,
