@@ -27,4 +27,33 @@ public static class MatroskaConstants
     internal const ulong CuePoint = 0xBB;
     internal const ulong CueTrackPositions = 0xB7;
     internal const ulong CuePointTrackNumber = 0xF7;
+
+    // Info — segment identity
+    internal const ulong SegmentUUID = 0x73A4;
+    internal const ulong SegmentFilename = 0x7384;
+    internal const ulong SegmentFamily = 0x4444;
+    internal const ulong PrevUUID = 0x3CB923;
+    internal const ulong NextUUID = 0x3EB923;
+
+    // Chapters
+    internal const ulong Chapters = 0x1043A770;
+    internal const ulong EditionEntry = 0x45B9;
+    internal const ulong EditionUID = 0x45BC;
+    internal const ulong EditionFlagDefault = 0x45DB;
+    internal const ulong EditionFlagOrdered = 0x45DD;
+    internal const ulong EditionFlagHidden = 0x45BD;
+
+    // ChapterAtom
+    internal const ulong ChapterAtom = 0xB6;
+    internal const ulong ChapterUID = 0x73C4;
+    internal const ulong ChapterStringUID = 0x5654;
+    internal const ulong ChapterTimeStart = 0x91;
+    internal const ulong ChapterTimeEnd = 0x92;
+    internal const ulong ChapterFlagHidden = 0x98;
+    internal const ulong ChapterFlagEnabled = 0x4598;
+    internal const ulong ChapterSegmentUID = 0x6E67;
+    internal const ulong ChapterSegmentEditionUID = 0x6EBC;
+    internal const ulong ChapterDisplay = 0x80;
+    internal const ulong ChapString = 0x85;
+    internal const ulong ChapLanguage = 0x437C;
 }
