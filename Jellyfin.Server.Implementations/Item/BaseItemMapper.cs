@@ -121,6 +121,8 @@ public static class BaseItemMapper
         dto.OwnerId = entity.OwnerId ?? Guid.Empty;
         dto.Width = entity.Width.GetValueOrDefault();
         dto.Height = entity.Height.GetValueOrDefault();
+        dto.HasOrderedChapters = entity.HasOrderedChapters;
+        dto.SegmentUuid = entity.SegmentUuid;
         dto.UserData = DetachUserData(entity);
 
         if (entity.Provider is not null)
@@ -312,6 +314,8 @@ public static class BaseItemMapper
         entity.OwnerId = dto.OwnerId == Guid.Empty ? null : dto.OwnerId;
         entity.Width = dto.Width;
         entity.Height = dto.Height;
+        entity.HasOrderedChapters = dto.HasOrderedChapters;
+        entity.SegmentUuid = dto.SegmentUuid;
         entity.Provider = dto.ProviderIds.Select(e => new BaseItemProvider()
         {
             Item = entity,

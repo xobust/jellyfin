@@ -231,6 +231,18 @@ namespace MediaBrowser.Controller.Entities
         [JsonIgnore]
         public int? TotalBitrate { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the primary file has Matroska ordered-chapter editions (library scan).
+        /// </summary>
+        [JsonIgnore]
+        public bool HasOrderedChapters { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Matroska SegmentUUID as lowercase hex, when known (library scan).
+        /// </summary>
+        [JsonIgnore]
+        public string SegmentUuid { get; set; }
+
         [JsonIgnore]
         public ExtraType? ExtraType { get; set; }
 

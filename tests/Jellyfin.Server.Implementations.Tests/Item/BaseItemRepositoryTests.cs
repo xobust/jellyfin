@@ -2,6 +2,7 @@ using System;
 using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Server.Implementations.Item;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.Entities.Movies;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -68,5 +69,23 @@ public class BaseItemRepositoryTests
 
         // Assert
         Assert.NotNull(result);
+    }
+
+    [Fact]
+    public void Map_EntityToBaseItem_SetsMatroskaFields()
+    {
+        var entity = new BaseItemEntity
+        {
+            Id = Guid.NewGuid(),
+            Type = "MediaBrowser.Controller.Entities.Movies.Movie",
+            HasOrderedChapters = true,
+            SegmentUuid = "0102030405060708090a0b0c0d0e0f10"
+        };
+
+        var movie = new Movie { Id = entity.Id };
+        BaseItemRepository.Map(entity, movie, null, NullLogger.Instance);
+
+        Assert.True(movie.HasOrderedChapters);
+        Assert.Equal("0102030405060708090a0b0c0d0e0f10", movie.SegmentUuid);
     }
 }

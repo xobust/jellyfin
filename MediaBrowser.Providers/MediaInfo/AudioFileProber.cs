@@ -162,6 +162,23 @@ namespace MediaBrowser.Providers.MediaInfo
             {
                 _chapterManager.SaveChapters(audio, mediaInfo.Chapters);
             }
+
+            var (probePath, probeProtocol) = GetResolvedProbePath(audio);
+            MatroskaLibraryMetadata.Populate(audio, probePath, probeProtocol, _logger);
+        }
+
+        private (string Path, MediaProtocol Protocol) GetResolvedProbePath(Audio audio)
+        {
+            var path = audio.Path;
+            var protocol = audio.PathProtocol ?? MediaProtocol.File;
+
+            if (audio.IsShortcut)
+            {
+                path = audio.ShortcutPath;
+                protocol = _mediaSourceManager.GetPathProtocol(path);
+            }
+
+            return (path, protocol);
         }
 
         /// <summary>

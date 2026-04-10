@@ -293,6 +293,23 @@ namespace MediaBrowser.Providers.MediaInfo
 
                 _chapterManager.SaveChapters(video, chapters);
             }
+
+            var (probePath, probeProtocol) = GetResolvedProbePath(video);
+            MatroskaLibraryMetadata.Populate(video, probePath, probeProtocol, _logger);
+        }
+
+        private (string Path, MediaProtocol Protocol) GetResolvedProbePath(Video video)
+        {
+            var path = video.Path;
+            var protocol = video.PathProtocol ?? MediaProtocol.File;
+
+            if (video.IsShortcut)
+            {
+                path = video.ShortcutPath;
+                protocol = _mediaSourceManager.GetPathProtocol(path);
+            }
+
+            return (path, protocol);
         }
 
         private void NormalizeChapterNames(ChapterInfo[] chapters)
