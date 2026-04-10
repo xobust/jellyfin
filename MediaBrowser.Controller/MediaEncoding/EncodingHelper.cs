@@ -20,6 +20,7 @@ using Jellyfin.Extensions;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller.Extensions;
 using MediaBrowser.Controller.IO;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
@@ -27,6 +28,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Session;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using IConfigurationManager = MediaBrowser.Common.Configuration.IConfigurationManager;
 
 namespace MediaBrowser.Controller.MediaEncoding
@@ -64,6 +66,8 @@ namespace MediaBrowser.Controller.MediaEncoding
         private readonly IConfiguration _config;
         private readonly IConfigurationManager _configurationManager;
         private readonly IPathManager _pathManager;
+        private readonly IOrderedChapterTimelineBuilder _orderedChapterTimelineBuilder;
+        private readonly ILogger<EncodingHelper> _logger;
 
         // i915 hang was fixed by linux 6.2 (3f882f2)
         private readonly Version _minKerneli915Hang = new Version(5, 18);
@@ -165,7 +169,9 @@ namespace MediaBrowser.Controller.MediaEncoding
             ISubtitleEncoder subtitleEncoder,
             IConfiguration config,
             IConfigurationManager configurationManager,
-            IPathManager pathManager)
+            IPathManager pathManager,
+            IOrderedChapterTimelineBuilder orderedChapterTimelineBuilder,
+            ILogger<EncodingHelper> logger)
         {
             _appPaths = appPaths;
             _mediaEncoder = mediaEncoder;
@@ -173,6 +179,8 @@ namespace MediaBrowser.Controller.MediaEncoding
             _config = config;
             _configurationManager = configurationManager;
             _pathManager = pathManager;
+            _orderedChapterTimelineBuilder = orderedChapterTimelineBuilder;
+            _logger = logger;
         }
 
         private enum DynamicHdrMetadataRemovalPlan
@@ -1250,14 +1258,12 @@ namespace MediaBrowser.Controller.MediaEncoding
         /// <returns>Input arguments.</returns>
         public string GetInputArgument(EncodingJobInfo state, EncodingOptions options, string segmentContainer)
         {
-            var arg = new StringBuilder();
+            ResetOrderedChapterState(state);
+
             var inputVidHwaccelArgs = GetInputVideoHwaccelArgs(state, options);
+            var orderedHwIncompatible = false;
 
-            if (!string.IsNullOrEmpty(inputVidHwaccelArgs))
-            {
-                arg.Append(inputVidHwaccelArgs);
-            }
-
+            var arg = new StringBuilder();
             var canvasArgs = GetGraphicalSubCanvasSize(state);
             if (!string.IsNullOrEmpty(canvasArgs))
             {
@@ -1276,11 +1282,20 @@ namespace MediaBrowser.Controller.MediaEncoding
                     .Append(concatFilePath)
                     .Append("\" ");
             }
-            else
+            else if (!TryAppendOrderedChapterMainInput(state, options, segmentContainer, arg, out orderedHwIncompatible))
             {
                 arg.Append(" -i ")
                     .Append(_mediaEncoder.GetInputPathArgument(state));
             }
+
+            var head = new StringBuilder();
+            if (!orderedHwIncompatible && !string.IsNullOrEmpty(inputVidHwaccelArgs))
+            {
+                head.Append(inputVidHwaccelArgs);
+            }
+
+            head.Append(arg);
+            arg = head;
 
             if (NeedsExternalSubtitleMuxing(state))
             {
@@ -3150,14 +3165,28 @@ namespace MediaBrowser.Controller.MediaEncoding
 
             var args = string.Empty;
 
+            var layoutInputIndex = state.OrderedChapterLayoutInputIndex;
+            var useOrderedFilterConcat = state.OrderedChapterInputMode == OrderedChapterTranscodeMode.FilterComplexVideoConcat
+                                         && layoutInputIndex >= 0;
+
             if (state.VideoStream is not null)
             {
-                int videoStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.VideoStream);
+                if (useOrderedFilterConcat)
+                {
+                    args += string.Format(
+                        CultureInfo.InvariantCulture,
+                        "-map {0}",
+                        state.OrderedChapterVideoMapLabel);
+                }
+                else
+                {
+                    int videoStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.VideoStream);
 
-                args += string.Format(
-                    CultureInfo.InvariantCulture,
-                    "-map 0:{0}",
-                    videoStreamIndex);
+                    args += string.Format(
+                        CultureInfo.InvariantCulture,
+                        "-map 0:{0}",
+                        videoStreamIndex);
+                }
             }
             else
             {
@@ -3189,13 +3218,19 @@ namespace MediaBrowser.Controller.MediaEncoding
             }
             else
             {
-                args += " -map -0:a";
+                if (!useOrderedFilterConcat)
+                {
+                    args += " -map -0:a";
+                }
             }
 
             var subtitleMethod = state.SubtitleDeliveryMethod;
             if (state.SubtitleStream is null || subtitleMethod == SubtitleDeliveryMethod.Hls)
             {
-                args += " -map -0:s";
+                if (!useOrderedFilterConcat)
+                {
+                    args += " -map -0:s";
+                }
             }
             else if (subtitleMethod == SubtitleDeliveryMethod.Embed)
             {
@@ -3218,7 +3253,6 @@ namespace MediaBrowser.Controller.MediaEncoding
                 else
                 {
                     int subtitleStreamIndex = FindIndex(state.MediaSource.MediaStreams, state.SubtitleStream);
-
                     args += string.Format(
                         CultureInfo.InvariantCulture,
                         " -map 0:{0}",

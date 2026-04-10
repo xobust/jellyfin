@@ -164,6 +164,10 @@ public static class StreamingHelpers
 
         encodingHelper.AttachMediaSourceInfo(state, encodingOptions, mediaSource, url);
 
+        state.HasOrderedChapters = item.HasOrderedChapters;
+        state.LibraryItemId = item.Id;
+        state.LibraryItemPath = item.Path ?? string.Empty;
+
         string? containerInternal = Path.GetExtension(state.RequestedUrl);
 
         if (string.IsNullOrEmpty(containerInternal)

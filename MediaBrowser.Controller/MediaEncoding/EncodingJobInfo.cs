@@ -130,6 +130,37 @@ namespace MediaBrowser.Controller.MediaEncoding
 
         public string InputContainer { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the library item uses Matroska ordered chapters.
+        /// </summary>
+        public bool HasOrderedChapters { get; set; }
+
+        /// <summary>
+        /// Gets or sets the library item id for the primary playback item.
+        /// </summary>
+        public Guid LibraryItemId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the resolved filesystem path for <see cref="LibraryItemId"/> (primary Matroska file).
+        /// </summary>
+        public string LibraryItemPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the active ordered-chapter ffmpeg strategy for the current command build.
+        /// Reset at the start of each <see cref="EncodingHelper.GetInputArgument"/> call.
+        /// </summary>
+        public OrderedChapterTranscodeMode OrderedChapterInputMode { get; set; }
+
+        /// <summary>
+        /// Gets or sets the video stream label to map when <see cref="OrderedChapterInputMode"/> is <see cref="OrderedChapterTranscodeMode.FilterComplexVideoConcat"/>.
+        /// </summary>
+        public string OrderedChapterVideoMapLabel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ffmpeg input index of the layout file (audio/subtitles) when using <see cref="OrderedChapterTranscodeMode.FilterComplexVideoConcat"/>; otherwise -1.
+        /// </summary>
+        public int OrderedChapterLayoutInputIndex { get; set; } = -1;
+
         public IsoType? IsoType { get; set; }
 
         public BaseEncodingJobOptions BaseRequest { get; set; }
