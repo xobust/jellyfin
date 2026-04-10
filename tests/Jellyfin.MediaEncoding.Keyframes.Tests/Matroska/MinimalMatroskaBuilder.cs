@@ -25,6 +25,8 @@ internal static class MinimalMatroskaBuilder
     private static readonly VInt IdChapterTimeStart = ReadId(0x91);
     private static readonly VInt IdChapterTimeEnd = ReadId(0x92);
     private static readonly VInt IdChapterSegmentUid = ReadId(0x6E, 0x67);
+    private static readonly VInt IdChapterSegmentEditionUid = ReadId(0x6E, 0xBC);
+    private static readonly VInt IdEditionFlagDefault = ReadId(0x45, 0xDB);
     private static readonly VInt SeekIdElementId = ReadId(0x53, 0xAB);
     private static readonly VInt SeekPositionElementId = ReadId(0x53, 0xAC);
 
@@ -144,6 +146,222 @@ internal static class MinimalMatroskaBuilder
                     {
                         atom.Write(IdChapterSegmentUid, chapterSegmentUuid, 0, chapterSegmentUuid.Length);
                     }
+                }
+            }
+        }
+
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// Two sequential local chapter atoms in one ordered edition (times in nanoseconds as stored in Matroska).
+    /// </summary>
+    public static byte[] BuildTwoLocalOrderedChapters(
+        byte[]? segmentUuid,
+        ulong editionUid,
+        ulong chapter1StartNs,
+        ulong chapter1EndNs,
+        ulong chapter2StartNs,
+        ulong chapter2EndNs)
+    {
+        var infoElement = BuildInfoElement(segmentUuid);
+        var chaptersElement = BuildChaptersElementTwoLocal(
+            editionUid,
+            chapter1StartNs,
+            chapter1EndNs,
+            chapter2StartNs,
+            chapter2EndNs);
+
+        long infoPos = 64;
+        byte[] seekHeadElement = Array.Empty<byte>();
+        for (var iter = 0; iter < 16; iter++)
+        {
+            var chapPos = infoPos + infoElement.Length;
+            seekHeadElement = BuildSeekHeadElement(infoPos, chapPos);
+            if (seekHeadElement.Length == infoPos)
+            {
+                break;
+            }
+
+            infoPos = seekHeadElement.Length;
+        }
+
+        using var ms = new MemoryStream();
+        var w = new EbmlWriter(ms);
+        using (var seg = w.StartMasterElement(IdSegment))
+        {
+            seg.Write(seekHeadElement, 0, seekHeadElement.Length);
+            seg.Write(infoElement, 0, infoElement.Length);
+            seg.Write(chaptersElement, 0, chaptersElement.Length);
+        }
+
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// One local chapter in an ordered edition (custom edition UID for linked-edition targets).
+    /// </summary>
+    public static byte[] BuildSingleLocalOrderedChapter(
+        byte[]? segmentUuid,
+        ulong editionUid,
+        ulong timeStartNs,
+        ulong timeEndNs)
+    {
+        var infoElement = BuildInfoElement(segmentUuid);
+        var chaptersElement = BuildChaptersElementOneLocal(editionUid, timeStartNs, timeEndNs);
+
+        long infoPos = 64;
+        byte[] seekHeadElement = Array.Empty<byte>();
+        for (var iter = 0; iter < 16; iter++)
+        {
+            var chapPos = infoPos + infoElement.Length;
+            seekHeadElement = BuildSeekHeadElement(infoPos, chapPos);
+            if (seekHeadElement.Length == infoPos)
+            {
+                break;
+            }
+
+            infoPos = seekHeadElement.Length;
+        }
+
+        using var ms = new MemoryStream();
+        var w = new EbmlWriter(ms);
+        using (var seg = w.StartMasterElement(IdSegment))
+        {
+            seg.Write(seekHeadElement, 0, seekHeadElement.Length);
+            seg.Write(infoElement, 0, infoElement.Length);
+            seg.Write(chaptersElement, 0, chaptersElement.Length);
+        }
+
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// One ordered chapter that links to another segment and edition (cross-item ordered-chapter tests).
+    /// </summary>
+    public static byte[] BuildLinkedOrderedChapter(
+        byte[]? segmentUuid,
+        ulong editionUid,
+        byte[] targetSegmentUid16,
+        ulong targetEditionUid,
+        ulong timeStartNs,
+        ulong timeEndNs)
+    {
+        var infoElement = BuildInfoElement(segmentUuid);
+        var chaptersElement = BuildChaptersElementLinked(
+            editionUid,
+            targetSegmentUid16,
+            targetEditionUid,
+            timeStartNs,
+            timeEndNs);
+
+        long infoPos = 64;
+        byte[] seekHeadElement = Array.Empty<byte>();
+        for (var iter = 0; iter < 16; iter++)
+        {
+            var chapPos = infoPos + infoElement.Length;
+            seekHeadElement = BuildSeekHeadElement(infoPos, chapPos);
+            if (seekHeadElement.Length == infoPos)
+            {
+                break;
+            }
+
+            infoPos = seekHeadElement.Length;
+        }
+
+        using var ms = new MemoryStream();
+        var w = new EbmlWriter(ms);
+        using (var seg = w.StartMasterElement(IdSegment))
+        {
+            seg.Write(seekHeadElement, 0, seekHeadElement.Length);
+            seg.Write(infoElement, 0, infoElement.Length);
+            seg.Write(chaptersElement, 0, chaptersElement.Length);
+        }
+
+        return ms.ToArray();
+    }
+
+    private static byte[] BuildChaptersElementOneLocal(ulong editionUid, ulong timeStartNs, ulong timeEndNs)
+    {
+        using var ms = new MemoryStream();
+        var w = new EbmlWriter(ms);
+        using (var ch = w.StartMasterElement(IdChapters))
+        {
+            using (var ed = ch.StartMasterElement(IdEditionEntry))
+            {
+                ed.Write(IdEditionUid, editionUid);
+                ed.Write(IdEditionFlagOrdered, 1UL);
+                ed.Write(IdEditionFlagDefault, 1UL);
+                using (var atom = ed.StartMasterElement(IdChapterAtom))
+                {
+                    atom.Write(IdChapterUid, 300UL);
+                    atom.Write(IdChapterTimeStart, timeStartNs);
+                    atom.Write(IdChapterTimeEnd, timeEndNs);
+                }
+            }
+        }
+
+        return ms.ToArray();
+    }
+
+    private static byte[] BuildChaptersElementTwoLocal(
+        ulong editionUid,
+        ulong chapter1StartNs,
+        ulong chapter1EndNs,
+        ulong chapter2StartNs,
+        ulong chapter2EndNs)
+    {
+        using var ms = new MemoryStream();
+        var w = new EbmlWriter(ms);
+        using (var ch = w.StartMasterElement(IdChapters))
+        {
+            using (var ed = ch.StartMasterElement(IdEditionEntry))
+            {
+                ed.Write(IdEditionUid, editionUid);
+                ed.Write(IdEditionFlagOrdered, 1UL);
+                ed.Write(IdEditionFlagDefault, 1UL);
+                using (var atom = ed.StartMasterElement(IdChapterAtom))
+                {
+                    atom.Write(IdChapterUid, 100UL);
+                    atom.Write(IdChapterTimeStart, chapter1StartNs);
+                    atom.Write(IdChapterTimeEnd, chapter1EndNs);
+                }
+
+                using (var atom = ed.StartMasterElement(IdChapterAtom))
+                {
+                    atom.Write(IdChapterUid, 101UL);
+                    atom.Write(IdChapterTimeStart, chapter2StartNs);
+                    atom.Write(IdChapterTimeEnd, chapter2EndNs);
+                }
+            }
+        }
+
+        return ms.ToArray();
+    }
+
+    private static byte[] BuildChaptersElementLinked(
+        ulong editionUid,
+        byte[] targetSegmentUid16,
+        ulong targetEditionUid,
+        ulong timeStartNs,
+        ulong timeEndNs)
+    {
+        using var ms = new MemoryStream();
+        var w = new EbmlWriter(ms);
+        using (var ch = w.StartMasterElement(IdChapters))
+        {
+            using (var ed = ch.StartMasterElement(IdEditionEntry))
+            {
+                ed.Write(IdEditionUid, editionUid);
+                ed.Write(IdEditionFlagOrdered, 1UL);
+                ed.Write(IdEditionFlagDefault, 1UL);
+                using (var atom = ed.StartMasterElement(IdChapterAtom))
+                {
+                    atom.Write(IdChapterUid, 200UL);
+                    atom.Write(IdChapterTimeStart, timeStartNs);
+                    atom.Write(IdChapterTimeEnd, timeEndNs);
+                    atom.Write(IdChapterSegmentUid, targetSegmentUid16, 0, targetSegmentUid16.Length);
+                    atom.Write(IdChapterSegmentEditionUid, targetEditionUid);
                 }
             }
         }

@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Moq" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
@@ -20,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Jellyfin.MediaEncoding.Hls\Jellyfin.MediaEncoding.Hls.csproj" />
     <ProjectReference Include="..\..\src\Jellyfin.MediaEncoding.Keyframes\Jellyfin.MediaEncoding.Keyframes.csproj" />
+    <ProjectReference Include="..\Jellyfin.MediaEncoding.Keyframes.Tests\Jellyfin.MediaEncoding.Keyframes.Tests.csproj" />
   </ItemGroup>
 
 </Project>

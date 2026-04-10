@@ -388,6 +388,11 @@ namespace MediaBrowser.Controller.Entities
 
         public string? ExternalId { get; set; }
 
+        /// <summary>
+        /// Gets or sets the Matroska SegmentUUID (lowercase hex) to match against <c>BaseItems.SegmentUuid</c>.
+        /// </summary>
+        public string? SegmentUuid { get; set; }
+
         public Guid[] AlbumIds { get; set; }
 
         public Guid[] ArtistIds { get; set; }

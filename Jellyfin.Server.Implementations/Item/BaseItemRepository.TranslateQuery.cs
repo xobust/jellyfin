@@ -474,6 +474,11 @@ public sealed partial class BaseItemRepository
             baseQuery = baseQuery.Where(e => e.ExternalId == filter.ExternalId);
         }
 
+        if (!string.IsNullOrWhiteSpace(filter.SegmentUuid))
+        {
+            baseQuery = baseQuery.Where(e => e.SegmentUuid == filter.SegmentUuid);
+        }
+
         if (!string.IsNullOrWhiteSpace(filter.Name))
         {
             var cleanName = filter.Name.GetCleanValue();
