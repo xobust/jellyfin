@@ -91,4 +91,24 @@ public class OrderedChapterTranscodePlannerTests
         Assert.NotNull(plan);
         Assert.Equal(2, plan!.Segments.Count);
     }
+
+    [Fact]
+    public void TryCreatePlan_WithRequestedVirtualTicks_UsesActiveSliceAndOffset()
+    {
+        var parts = new[]
+        {
+            new OrderedTimelinePart(MainId, "/a.mkv", 0L, 10_000_000L, false),
+            new OrderedTimelinePart(MainId, "/b.mkv", 10_000_000L, 20_000_000L, false)
+        };
+        var timeline = new OrderedChapterTimelineResult(parts, 0, MainId, "/a.mkv");
+
+        var plan = OrderedChapterTranscodePlanner.TryCreatePlan(MainId, timeline, 15_000_000L);
+
+        Assert.NotNull(plan);
+        Assert.Equal(5_000_000L, plan!.OutputTsOffsetTicks);
+        Assert.Equal(2, plan.Segments.Count);
+        Assert.Equal("/b.mkv", plan.Segments[0].Path);
+        Assert.Equal(15_000_000L, plan.Segments[0].StartTicks);
+        Assert.Equal(20_000_000L, plan.Segments[0].EndTicks);
+    }
 }

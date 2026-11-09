@@ -69,9 +69,11 @@ public partial class EncodingHelper
             return false;
         }
 
+        var requestedVirtualTicks = state.StartTimeTicks ?? 0L;
         var plan = OrderedChapterTranscodePlanner.TryCreatePlan(
             state.LibraryItemId,
-            timeline);
+            timeline,
+            requestedVirtualTicks);
 
         if (plan is null)
         {
@@ -130,6 +132,12 @@ public partial class EncodingHelper
         arg.Append(" -filter_complex \"")
             .Append(graph)
             .Append('"');
+
+        if (plan.OutputTsOffsetTicks > 0)
+        {
+            arg.Append(" -output_ts_offset ")
+                .Append(_mediaEncoder.GetTimeParameter(plan.OutputTsOffsetTicks));
+        }
 
         arg.Append(" -i ")
             .Append(_mediaEncoder.GetInputPathArgument(timeline.LayoutPath, state.MediaSource));

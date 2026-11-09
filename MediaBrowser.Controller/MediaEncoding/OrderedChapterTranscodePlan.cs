@@ -27,4 +27,9 @@ public sealed class OrderedChapterTranscodePlan
     /// Gets or sets the video output label for <c>-map</c>, e.g. <c>[ocv]</c>.
     /// </summary>
     public string? VideoMapLabel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the virtual timestamp offset to apply to the output when the request starts in the middle of the active part.
+    /// </summary>
+    public long OutputTsOffsetTicks { get; set; }
 }

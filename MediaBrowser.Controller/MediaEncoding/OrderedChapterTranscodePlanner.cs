@@ -27,26 +27,47 @@ public static class OrderedChapterTranscodePlanner
         Guid mainItemId,
         OrderedChapterTimelineResult timeline)
     {
+        return TryCreatePlan(mainItemId, timeline, 0L);
+    }
+
+    /// <summary>
+    /// Tries to build a transcode plan for a specific virtual playback seek point.
+    /// </summary>
+    /// <param name="mainItemId">Primary library item id.</param>
+    /// <param name="timeline">Timeline from <see cref="IOrderedChapterTimelineBuilder"/>.</param>
+    /// <param name="requestedVirtualTicks">Requested virtual playback tick (seek target).</param>
+    /// <returns>A plan or null.</returns>
+    public static OrderedChapterTranscodePlan? TryCreatePlan(
+        Guid mainItemId,
+        OrderedChapterTimelineResult timeline,
+        long requestedVirtualTicks)
+    {
         ArgumentNullException.ThrowIfNull(timeline);
 
-        var paired = timeline.Parts
+        var playable = timeline.Parts
             .Where(p => !p.IsMissing && p.SourceEndTicks > p.SourceStartTicks)
             .ToList();
 
-        if (paired.Count == 0)
+        if (playable.Count == 0)
         {
             return null;
         }
 
-        var needsOrdered = paired.Count > 1 || paired.Any(p => !p.ItemId.Equals(mainItemId));
+        var needsOrdered = playable.Count > 1 || playable.Any(p => !p.ItemId.Equals(mainItemId));
         if (!needsOrdered)
         {
             return null;
         }
 
-        var segments = paired
-            .Select(p => new OrderedChapterTranscodeSegment(p.Path, p.SourceStartTicks, p.SourceEndTicks))
+        var activePlan = OrderedChapterInputPlanner.TryCreate(playable, requestedVirtualTicks);
+        var segments = (activePlan is null ? playable : activePlan.Inputs)
+            .Select(i => new OrderedChapterTranscodeSegment(i.Path, i.SourceStartTicks, i.SourceEndTicks))
             .ToList();
+
+        if (segments.Count == 0)
+        {
+            return null;
+        }
 
         var n = segments.Count;
         var inputs = new List<string>(n);
@@ -64,7 +85,8 @@ public static class OrderedChapterTranscodePlanner
             Mode = OrderedChapterTranscodeMode.FilterComplexVideoConcat,
             Segments = segments,
             FilterComplexGraph = concat,
-            VideoMapLabel = VideoConcatOutputLabel
+            VideoMapLabel = VideoConcatOutputLabel,
+            OutputTsOffsetTicks = activePlan?.OutputTsOffsetTicks ?? 0L
         };
     }
 
