@@ -67,4 +67,17 @@ public static class OrderedChapterTranscodePlanner
             VideoMapLabel = VideoConcatOutputLabel
         };
     }
+
+    /// <summary>
+    /// Builds the exact ffmpeg input plan for a requested virtual timeline tick.
+    /// </summary>
+    /// <param name="parts">Playable ordered timeline parts in virtual order.</param>
+    /// <param name="requestedVirtualTicks">Requested offset on the virtual timeline.</param>
+    /// <returns>A pure planning result or null if no playable range is available.</returns>
+    public static OrderedChapterInputPlanner.OrderedChapterInputPlan? TryCreateInputPlan(
+        IReadOnlyList<OrderedTimelinePart> parts,
+        long requestedVirtualTicks)
+    {
+        return OrderedChapterInputPlanner.TryCreate(parts, requestedVirtualTicks);
+    }
 }
