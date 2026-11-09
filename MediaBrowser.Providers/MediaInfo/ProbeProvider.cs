@@ -18,6 +18,7 @@ using MediaBrowser.Controller.Lyrics;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
@@ -70,6 +71,7 @@ namespace MediaBrowser.Providers.MediaInfo
         /// <param name="lyricManager">Instance of the <see cref="ILyricManager"/> interface.</param>
         /// <param name="mediaAttachmentRepository">Instance of the <see cref="IMediaAttachmentRepository"/> interface.</param>
         /// <param name="mediaStreamRepository">Instance of the <see cref="IMediaStreamRepository"/> interface.</param>
+        /// <param name="orderedChapterTimelineBuilder">Instance of the <see cref="IOrderedChapterTimelineBuilder"/> interface.</param>
         public ProbeProvider(
             IMediaSourceManager mediaSourceManager,
             IMediaEncoder mediaEncoder,
@@ -84,7 +86,8 @@ namespace MediaBrowser.Providers.MediaInfo
             NamingOptions namingOptions,
             ILyricManager lyricManager,
             IMediaAttachmentRepository mediaAttachmentRepository,
-            IMediaStreamRepository mediaStreamRepository)
+            IMediaStreamRepository mediaStreamRepository,
+            IOrderedChapterTimelineBuilder orderedChapterTimelineBuilder)
         {
             _logger = loggerFactory.CreateLogger<ProbeProvider>();
             _audioResolver = new AudioResolver(loggerFactory.CreateLogger<AudioResolver>(), localization, mediaEncoder, fileSystem, namingOptions);
@@ -104,7 +107,8 @@ namespace MediaBrowser.Providers.MediaInfo
                 _audioResolver,
                 _subtitleResolver,
                 mediaAttachmentRepository,
-                mediaStreamRepository);
+                mediaStreamRepository,
+                orderedChapterTimelineBuilder);
 
             _audioProber = new AudioFileProber(
                 loggerFactory.CreateLogger<AudioFileProber>(),

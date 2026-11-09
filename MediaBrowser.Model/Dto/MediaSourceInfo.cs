@@ -128,6 +128,8 @@ namespace MediaBrowser.Model.Dto
 
         public bool HasSegments { get; set; }
 
+        public string OrderedChapterTimeline { get; set; }
+
         [JsonIgnore]
         public MediaStream VideoStream
         {

@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +29,7 @@ using MediaBrowser.Controller.MediaSegments;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Configuration;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
@@ -242,6 +244,12 @@ namespace MediaBrowser.Controller.Entities
         /// </summary>
         [JsonIgnore]
         public string SegmentUuid { get; set; }
+
+        /// <summary>
+        /// Gets or sets the resolved ordered-chapter virtual playback timeline for the item, when available.
+        /// </summary>
+        [JsonIgnore]
+        public OrderedChapterTimelineResult OrderedChapterTimeline { get; set; }
 
         [JsonIgnore]
         public ExtraType? ExtraType { get; set; }
@@ -1272,7 +1280,8 @@ namespace MediaBrowser.Controller.Entities
                 Type = type,
                 HasSegments = MediaSegmentManager.IsTypeSupported(item)
                     && (protocol is null or MediaProtocol.File)
-                    && MediaSegmentManager.HasSegments(item.Id)
+                    && MediaSegmentManager.HasSegments(item.Id),
+                OrderedChapterTimeline = item.OrderedChapterTimeline is null ? null : JsonSerializer.Serialize(item.OrderedChapterTimeline)
             };
 
             if (string.IsNullOrEmpty(info.Path))

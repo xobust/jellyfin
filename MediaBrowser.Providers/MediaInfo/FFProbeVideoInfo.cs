@@ -17,6 +17,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Providers;
+using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Dlna;
@@ -43,6 +44,7 @@ namespace MediaBrowser.Providers.MediaInfo
         private readonly SubtitleResolver _subtitleResolver;
         private readonly IMediaAttachmentRepository _mediaAttachmentRepository;
         private readonly IMediaStreamRepository _mediaStreamRepository;
+        private readonly IOrderedChapterTimelineBuilder _orderedChapterTimelineBuilder;
 
         public FFProbeVideoInfo(
             ILogger<FFProbeVideoInfo> logger,
@@ -57,7 +59,8 @@ namespace MediaBrowser.Providers.MediaInfo
             AudioResolver audioResolver,
             SubtitleResolver subtitleResolver,
             IMediaAttachmentRepository mediaAttachmentRepository,
-            IMediaStreamRepository mediaStreamRepository)
+            IMediaStreamRepository mediaStreamRepository,
+            IOrderedChapterTimelineBuilder orderedChapterTimelineBuilder)
         {
             _logger = logger;
             _mediaSourceManager = mediaSourceManager;
@@ -72,6 +75,7 @@ namespace MediaBrowser.Providers.MediaInfo
             _subtitleResolver = subtitleResolver;
             _mediaAttachmentRepository = mediaAttachmentRepository;
             _mediaStreamRepository = mediaStreamRepository;
+            _orderedChapterTimelineBuilder = orderedChapterTimelineBuilder;
         }
 
         public async Task<ItemUpdateType> ProbeVideo<T>(
@@ -296,6 +300,15 @@ namespace MediaBrowser.Providers.MediaInfo
 
             var (probePath, probeProtocol) = GetResolvedProbePath(video);
             MatroskaLibraryMetadata.Populate(video, probePath, probeProtocol, _logger);
+
+            if (video.HasOrderedChapters && !string.IsNullOrWhiteSpace(probePath))
+            {
+                video.OrderedChapterTimeline = _orderedChapterTimelineBuilder.Build(video.Id, probePath, _logger);
+            }
+            else
+            {
+                video.OrderedChapterTimeline = null;
+            }
         }
 
         private (string Path, MediaProtocol Protocol) GetResolvedProbePath(Video video)
