@@ -8,10 +8,12 @@ using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.MediaInfo;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+using IConfigurationManager = MediaBrowser.Common.Configuration.IConfigurationManager;
 
 namespace Jellyfin.MediaEncoding.Hls.Tests.OrderedChapters;
 
@@ -38,7 +40,7 @@ public class OrderedChapterTranscodePlannerTests
     }
 
     [Fact]
-    public void TryCreatePlan_TwoPartsSameCodec_UsesFilterComplexConcat()
+    public void TryCreatePlan_SingleFileParts_UsesFilterComplexConcatByDefault()
     {
         var parts = new[]
         {
@@ -51,7 +53,37 @@ public class OrderedChapterTranscodePlannerTests
 
         Assert.NotNull(plan);
         Assert.Equal(OrderedChapterTranscodeMode.FilterComplexVideoConcat, plan!.Mode);
-        Assert.Equal(2, plan.Segments.Count);
+        Assert.True(plan.Segments.Count == 2);
+        Assert.True(plan.ConcatDemuxerPath is null, "The optional demuxer fast path must stay gated behind aligned keyframes.");
+    }
+
+    [Fact]
+    public void CanUseConcatDemuxerFastPath_WhenKeyframesAreAligned_ReturnsTrue()
+    {
+        var parts = new[]
+        {
+            new OrderedChapterTranscodeSegment("/a.mkv", 0L, 50_000_000L),
+            new OrderedChapterTranscodeSegment("/a.mkv", 50_000_000L, 100_000_000L)
+        };
+
+        Assert.True(OrderedChapterTranscodePlanner.CanUseConcatDemuxerFastPath(parts, new[] { 0L, 50_000_000L, 100_000_000L }));
+    }
+
+    [Fact]
+    public void TryCreatePlan_TwoPartsSameCodec_UsesFilterComplexConcat()
+    {
+        var parts = new[]
+        {
+            new OrderedTimelinePart(MainId, "/a.mkv", 0L, 50_000_000L, false),
+            new OrderedTimelinePart(OtherId, "/b.mkv", 0L, 50_000_000L, false)
+        };
+        var timeline = new OrderedChapterTimelineResult(parts, 0, MainId, "/a.mkv");
+
+        var plan = OrderedChapterTranscodePlanner.TryCreatePlan(MainId, timeline);
+
+        Assert.NotNull(plan);
+        Assert.Equal(OrderedChapterTranscodeMode.FilterComplexVideoConcat, plan!.Mode);
+        Assert.True(plan.Segments.Count == 2);
         Assert.Contains("concat=n=2:v=1:a=0", plan.FilterComplexGraph, StringComparison.Ordinal);
         Assert.Equal(OrderedChapterTranscodePlanner.VideoConcatOutputLabel, plan.VideoMapLabel);
     }
@@ -98,7 +130,7 @@ public class OrderedChapterTranscodePlannerTests
         var plan = OrderedChapterTranscodePlanner.TryCreatePlan(MainId, timeline);
 
         Assert.NotNull(plan);
-        Assert.Equal(2, plan!.Segments.Count);
+        Assert.True(plan!.Segments.Count == 2);
     }
 
     [Fact]
@@ -115,7 +147,7 @@ public class OrderedChapterTranscodePlannerTests
 
         Assert.NotNull(plan);
         Assert.Equal(5_000_000L, plan!.OutputTsOffsetTicks);
-        Assert.Equal(2, plan.Segments.Count);
+        Assert.True(plan.Segments.Count == 1);
         Assert.Equal("/b.mkv", plan.Segments[0].Path);
         Assert.Equal(15_000_000L, plan.Segments[0].StartTicks);
         Assert.Equal(20_000_000L, plan.Segments[0].EndTicks);
@@ -142,7 +174,7 @@ public class OrderedChapterTranscodePlannerTests
             InputProtocol = MediaProtocol.File,
             MediaSource = new MediaSourceInfo { VideoType = VideoType.VideoFile },
             VideoStream = new MediaStream { Type = MediaStreamType.Video, Index = 0 },
-            SubtitleStream = new MediaStream { Type = MediaStreamType.Subtitle, Index = 1, IsTextSubtitleStream = true },
+            SubtitleStream = new MediaStream { Type = MediaStreamType.Subtitle, Index = 1, Codec = "srt" },
             SubtitleDeliveryMethod = SubtitleDeliveryMethod.Encode,
             BaseRequest = new BaseEncodingJobOptions(),
             LibraryItemId = MainId,

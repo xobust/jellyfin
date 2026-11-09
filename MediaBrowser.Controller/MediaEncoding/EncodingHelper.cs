@@ -2891,9 +2891,9 @@ namespace MediaBrowser.Controller.MediaEncoding
 #pragma warning disable SA1008
                 return (inputChannels, outputChannels) switch
                 {
-                    ( >= 6, >= 6 or 0) => Math.Min(640000, bitrate),
-                    ( > 0, > 0) => Math.Min(outputChannels * 128000, bitrate),
-                    ( > 0, _) => Math.Min(inputChannels * 128000, bitrate),
+                    (>= 6, >= 6 or 0) => Math.Min(640000, bitrate),
+                    (> 0, > 0) => Math.Min(outputChannels * 128000, bitrate),
+                    (> 0, _) => Math.Min(inputChannels * 128000, bitrate),
                     (_, _) => Math.Min(384000, bitrate)
                 };
 #pragma warning restore SA1008
@@ -2905,9 +2905,9 @@ namespace MediaBrowser.Controller.MediaEncoding
 #pragma warning disable SA1008
                 return (inputChannels, outputChannels) switch
                 {
-                    ( >= 6, >= 6 or 0) => Math.Min(768000, bitrate),
-                    ( > 0, > 0) => Math.Min(outputChannels * 136000, bitrate),
-                    ( > 0, _) => Math.Min(inputChannels * 136000, bitrate),
+                    (>= 6, >= 6 or 0) => Math.Min(768000, bitrate),
+                    (> 0, > 0) => Math.Min(outputChannels * 136000, bitrate),
+                    (> 0, _) => Math.Min(inputChannels * 136000, bitrate),
                     (_, _) => Math.Min(672000, bitrate)
                 };
 #pragma warning restore SA1008

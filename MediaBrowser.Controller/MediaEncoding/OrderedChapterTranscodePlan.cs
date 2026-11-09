@@ -19,6 +19,11 @@ public sealed class OrderedChapterTranscodePlan
     public IReadOnlyList<OrderedChapterTranscodeSegment> Segments { get; set; } = Array.Empty<OrderedChapterTranscodeSegment>();
 
     /// <summary>
+    /// Gets or sets the temporary ffconcat list path when <see cref="Mode"/> is <see cref="OrderedChapterTranscodeMode.ConcatDemuxer"/>.
+    /// </summary>
+    public string? ConcatDemuxerPath { get; set; }
+
+    /// <summary>
     /// Gets or sets the <c>-filter_complex</c> graph (without outer quotes) when <see cref="Mode"/> is <see cref="OrderedChapterTranscodeMode.FilterComplexVideoConcat"/>.
     /// </summary>
     public string? FilterComplexGraph { get; set; }

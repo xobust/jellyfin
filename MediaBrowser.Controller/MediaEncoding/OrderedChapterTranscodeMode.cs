@@ -11,7 +11,12 @@ public enum OrderedChapterTranscodeMode
     None = 0,
 
     /// <summary>
+    /// Use the ffmpeg concat demuxer with a generated ffconcat file for a single-file fast path.
+    /// </summary>
+    ConcatDemuxer = 1,
+
+    /// <summary>
     /// Use per-input trim and a video-only concat filter graph.
     /// </summary>
-    FilterComplexVideoConcat = 1
+    FilterComplexVideoConcat = 2
 }

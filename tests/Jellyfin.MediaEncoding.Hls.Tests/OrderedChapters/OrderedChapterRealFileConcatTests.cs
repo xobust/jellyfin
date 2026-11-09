@@ -128,11 +128,10 @@ public sealed class OrderedChapterRealFileConcatTests
             var plan = OrderedChapterTranscodePlanner.TryCreatePlan(Guid.NewGuid(), new OrderedChapterTimelineResult(selected.Segments.Select(s => new OrderedTimelinePart(Guid.NewGuid(), s.Path, s.StartTicks, s.EndTicks, false)).ToArray(), 0, Guid.NewGuid(), selected.Path));
             Assert.NotNull(plan);
             Assert.Equal(OrderedChapterTranscodeMode.FilterComplexVideoConcat, plan!.Mode);
-            Assert.Contains("concat=n=" + plan.Segments.Count, plan.FilterComplexGraph, StringComparison.Ordinal);
+            Assert.Null(plan.ConcatDemuxerPath);
 
             _output.WriteLine($"Main chapter file: {selected.Path}");
-            _output.WriteLine($"Filter graph generated for {plan.Segments.Count} segments");
-            _output.WriteLine("This ordered-chapter path is filter_complex-only and does not use ffconcat demuxer output.");
+            _output.WriteLine($"filter_complex graph generated for {plan.Segments.Count} segments");
         }
         finally
         {

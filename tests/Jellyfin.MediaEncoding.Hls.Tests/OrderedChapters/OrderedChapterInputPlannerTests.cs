@@ -25,7 +25,7 @@ public class OrderedChapterInputPlannerTests
 
         Assert.NotNull(plan);
         Assert.Equal(5_000_000L, plan!.OutputTsOffsetTicks);
-        Assert.Equal(2, plan.Inputs.Count);
+        Assert.True(plan.Inputs.Count == 2);
         Assert.Equal("/a.mkv", plan.Inputs[0].Path);
         Assert.Equal(5_000_000L, plan.Inputs[0].SourceStartTicks);
         Assert.Equal(10_000_000L, plan.Inputs[0].SourceEndTicks);
@@ -80,7 +80,7 @@ public class OrderedChapterInputPlannerTests
         var plan = OrderedChapterInputPlanner.TryCreate(parts, 7_000_000L);
 
         Assert.NotNull(plan);
-        Assert.Equal(2, plan!.Inputs.Count);
+        Assert.True(plan!.Inputs.Count == 2);
         Assert.Equal("/a.mkv", plan.Inputs[0].Path);
         Assert.Equal("/b.mkv", plan.Inputs[1].Path);
         Assert.Equal(7_000_000L, plan.Inputs[0].SourceStartTicks);

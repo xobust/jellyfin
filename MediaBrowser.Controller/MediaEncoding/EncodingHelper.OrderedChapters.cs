@@ -80,6 +80,23 @@ public partial class EncodingHelper
             return false;
         }
 
+        if (plan.Mode == OrderedChapterTranscodeMode.ConcatDemuxer)
+        {
+            if (!string.IsNullOrEmpty(GetInputVideoHwaccelArgs(state, options)))
+            {
+                _logger.LogWarning(
+                    "Ordered chapter transcode: concat demuxer fast path is not used with hardware decoding; using primary file input.");
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(plan.ConcatDemuxerPath))
+            {
+                AppendConcatDemuxerOrderedInputs(state, arg, plan);
+                state.OrderedChapterInputMode = OrderedChapterTranscodeMode.ConcatDemuxer;
+                return true;
+            }
+        }
+
         if (plan.Mode == OrderedChapterTranscodeMode.FilterComplexVideoConcat)
         {
             if (!string.IsNullOrEmpty(GetInputVideoHwaccelArgs(state, options)))
@@ -98,6 +115,15 @@ public partial class EncodingHelper
         }
 
         return false;
+    }
+
+    private void AppendConcatDemuxerOrderedInputs(
+        EncodingJobInfo state,
+        StringBuilder arg,
+        OrderedChapterTranscodePlan plan)
+    {
+        arg.Append(" -f concat -safe 0 -i ")
+            .Append(_mediaEncoder.GetInputPathArgument(plan.ConcatDemuxerPath, state.MediaSource));
     }
 
     private void AppendFilterComplexOrderedInputs(
