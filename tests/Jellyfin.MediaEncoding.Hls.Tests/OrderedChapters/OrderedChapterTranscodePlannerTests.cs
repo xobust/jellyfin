@@ -1,7 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Controller.IO;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
+using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.Entities;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace Jellyfin.MediaEncoding.Hls.Tests.OrderedChapters;
@@ -110,5 +119,41 @@ public class OrderedChapterTranscodePlannerTests
         Assert.Equal("/b.mkv", plan.Segments[0].Path);
         Assert.Equal(15_000_000L, plan.Segments[0].StartTicks);
         Assert.Equal(20_000_000L, plan.Segments[0].EndTicks);
+    }
+
+    [Fact]
+    public void ShouldAttemptOrderedChapterTranscode_ReturnsFalse_WhenSubtitleIsEncoded()
+    {
+        var helper = new EncodingHelper(
+            Mock.Of<IApplicationPaths>(),
+            Mock.Of<IMediaEncoder>(),
+            Mock.Of<ISubtitleEncoder>(),
+            new ConfigurationBuilder().Build(),
+            Mock.Of<IConfigurationManager>(),
+            Mock.Of<IPathManager>(),
+            Mock.Of<IOrderedChapterTimelineBuilder>(),
+            NullLogger<EncodingHelper>.Instance);
+
+        var state = new EncodingJobInfo(TranscodingJobType.Hls)
+        {
+            HasOrderedChapters = true,
+            IsInputVideo = true,
+            InputContainer = "mkv",
+            InputProtocol = MediaProtocol.File,
+            MediaSource = new MediaSourceInfo { VideoType = VideoType.VideoFile },
+            VideoStream = new MediaStream { Type = MediaStreamType.Video, Index = 0 },
+            SubtitleStream = new MediaStream { Type = MediaStreamType.Subtitle, Index = 1, IsTextSubtitleStream = true },
+            SubtitleDeliveryMethod = SubtitleDeliveryMethod.Encode,
+            BaseRequest = new BaseEncodingJobOptions(),
+            LibraryItemId = MainId,
+            LibraryItemPath = "/a.mkv"
+        };
+
+        var method = typeof(EncodingHelper).GetMethod("ShouldAttemptOrderedChapterTranscode", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        Assert.NotNull(method);
+        var result = (bool)method.Invoke(helper, [state, "mkv"])!;
+
+        Assert.False(result);
     }
 }

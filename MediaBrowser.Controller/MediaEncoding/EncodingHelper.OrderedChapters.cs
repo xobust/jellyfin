@@ -82,13 +82,6 @@ public partial class EncodingHelper
 
         if (plan.Mode == OrderedChapterTranscodeMode.FilterComplexVideoConcat)
         {
-            if (ShouldEncodeSubtitle(state))
-            {
-                _logger.LogWarning(
-                    "Ordered chapter transcode: filter_complex concat is not used when subtitles are being burned in; using primary file input.");
-                return false;
-            }
-
             if (!string.IsNullOrEmpty(GetInputVideoHwaccelArgs(state, options)))
             {
                 _logger.LogWarning(
@@ -190,6 +183,11 @@ public partial class EncodingHelper
         }
 
         if (state.AudioStream?.IsExternal == true)
+        {
+            return false;
+        }
+
+        if (ShouldEncodeSubtitle(state))
         {
             return false;
         }

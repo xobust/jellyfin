@@ -60,7 +60,12 @@ public static class OrderedChapterTranscodePlanner
         }
 
         var activePlan = OrderedChapterInputPlanner.TryCreate(playable, requestedVirtualTicks);
-        var segments = (activePlan is null ? playable : activePlan.Inputs)
+        var activeInputs = (activePlan is null
+                ? playable.Select(p => new OrderedChapterInputPlanner.OrderedChapterInput(p.Path, p.SourceStartTicks, p.SourceEndTicks))
+                : activePlan.Inputs)
+            .ToList();
+
+        var segments = activeInputs
             .Select(i => new OrderedChapterTranscodeSegment(i.Path, i.SourceStartTicks, i.SourceEndTicks))
             .ToList();
 
@@ -70,13 +75,13 @@ public static class OrderedChapterTranscodePlanner
         }
 
         var n = segments.Count;
-        var inputs = new List<string>(n);
+        var concatInputs = new List<string>(n);
         for (var i = 0; i < n; i++)
         {
-            inputs.Add(string.Format(CultureInfo.InvariantCulture, "[{0}:v:0]", i));
+            concatInputs.Add(string.Format(CultureInfo.InvariantCulture, "[{0}:v:0]", i));
         }
 
-        var concat = string.Join(string.Empty, inputs)
+        var concat = string.Join(string.Empty, concatInputs)
                      + string.Format(CultureInfo.InvariantCulture, "concat=n={0}:v=1:a=0", n)
                      + VideoConcatOutputLabel;
 
