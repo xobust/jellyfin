@@ -4,7 +4,6 @@ using System.Linq;
 using Jellyfin.MediaEncoding.Keyframes.Matroska;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Jellyfin.MediaEncoding.Keyframes.Tests.Matroska;
 

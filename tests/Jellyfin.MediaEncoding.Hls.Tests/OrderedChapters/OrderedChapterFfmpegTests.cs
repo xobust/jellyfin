@@ -267,7 +267,8 @@ public sealed class OrderedChapterFfmpegTests
         var current = AppContext.BaseDirectory;
         while (!string.IsNullOrEmpty(current))
         {
-            if (File.Exists(Path.Combine(current, "Jellyfin.sln")))
+            if (File.Exists(Path.Combine(current, "Jellyfin.sln"))
+                || File.Exists(Path.Combine(current, "Jellyfin.slnx")))
             {
                 return current;
             }

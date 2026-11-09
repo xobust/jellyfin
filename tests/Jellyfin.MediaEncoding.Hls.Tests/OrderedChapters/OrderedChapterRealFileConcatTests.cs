@@ -13,7 +13,6 @@ using MediaBrowser.Controller.Streaming;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Jellyfin.MediaEncoding.Hls.Tests.OrderedChapters;
 

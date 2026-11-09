@@ -1,13 +1,17 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Xunit;
 
 namespace Jellyfin.MediaEncoding.Hls.Tests.OrderedChapters;
 
 public sealed class FfmpegFactAttribute : FactAttribute
 {
-    public FfmpegFactAttribute()
+    public FfmpegFactAttribute(
+        [CallerFilePath] string? sourceFilePath = null,
+        [CallerLineNumber] int sourceLineNumber = -1)
+        : base(sourceFilePath, sourceLineNumber)
     {
         if (FindExecutable("bash") is null
             || FindExecutable("ffmpeg") is null
